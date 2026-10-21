@@ -31,7 +31,6 @@ public class Automaton {
 		return false;
 	}
 	
-	// [NOVO] true se nenhum caractere foi lido ainda (automato no estado inicial, sem texto acumulado)
 	public boolean isEmpty() {
 		return possible_token.length() == 0;
 	}

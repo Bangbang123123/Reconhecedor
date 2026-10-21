@@ -3,7 +3,6 @@ import java.util.Queue;
 public class Parser {
     private final Queue<Token> tokens;
 
-    // [NOVO] tabelas preenchidas durante a analise sintatica
     private final SymbolTable symbols = new SymbolTable();
     private final CodeTable codes = new CodeTable();
 
@@ -11,7 +10,6 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    // [NOVO] acesso as tabelas depois do parse()
     public SymbolTable getSymbolTable() {
     	return symbols;
     }
@@ -38,7 +36,6 @@ public class Parser {
         consume(TokenType.EOF);
     }
 
-    // [NOVO] Bloco "{ programa }": devolve {linha do '{', linha do '}'} para a Tabela de Codigos
     private int[] block() {
     	int open = consume(TokenType.LBRACE).getLine();
     	program();
@@ -51,7 +48,6 @@ public class Parser {
     	Token type = consume(TokenType.TYPE);
     	Token name = consume(TokenType.NAME);
 
-    	// [NOVO] escopo 0 (global) guarda o nome da funcao; escopo 1 guarda parametros e corpo
     	symbols.enterScope();
     	SymbolTable.Entry functionSymbol = symbols.declare(name.getValue(), "Função(" + type.getValue() + ")", name.getLine());
     	CodeTable.Entry functionCode = codes.openFunction(name.getValue());
@@ -69,7 +65,6 @@ public class Parser {
     	consume(TokenType.RPAREN);
     	int[] body = block();
 
-    	// [NOVO] fecha as tabelas da funcao (equivale ao "Principal" do Portugol)
     	functionCode.end1 = body[1];
     	functionCode.start2 = body[0];
     	functionCode.end2 = body[1];
@@ -78,7 +73,6 @@ public class Parser {
     	symbols.exitScope();
     }
 
-    // [NOVO] Parametro "tipo nome": ja entra na Tabela de Simbolos (escopo da funcao)
     private void parameter() {
     	Token type = consume(TokenType.TYPE);
     	Token name = consume(TokenType.NAME);
@@ -109,7 +103,7 @@ public class Parser {
     		break;
     	case TokenType.NAME:
     		Token variable = compound_name();
-    		use(variable); // [NOVO] registra o uso na Tabela de Simbolos
+    		use(variable); 
     		switch (peek().getType()) {
     		case TokenType.ASSIGN:
     			assignment();
@@ -127,7 +121,6 @@ public class Parser {
     	}
     }
 
-    // [NOVO] Declaracao "tipo nome" ou "tipo nome = valor": registra a variavel na Tabela de Simbolos
     private void declaration() {
     	Token type = consume(TokenType.TYPE);
     	Token name = consume(TokenType.NAME);
@@ -143,7 +136,6 @@ public class Parser {
     	}
     }
 
-    // [NOVO] Registra o uso de uma variavel simples (nome sozinho). Chamadas e membros (a.b, f()) nao entram.
     private void use(Token variable) {
     	if (variable != null) {
     		symbols.use(variable.getValue(), variable.getLine());
@@ -154,7 +146,7 @@ public class Parser {
     // If
     private void if_command() {
     	consume(TokenType.IF);
-    	CodeTable.Entry code = codes.open("IF"); // [NOVO]
+    	CodeTable.Entry code = codes.open("IF");
     	consume(TokenType.LPAREN);
     	logic_expression();
     	consume(TokenType.RPAREN);
@@ -165,7 +157,6 @@ public class Parser {
     	code.start1 = block1[0];
     	code.end1 = block1[1];
 
-    	// [NOVO] else opcional: if (...) { ... } else { ... }
     	if (peek().getType() == TokenType.ELSE) {
     		consume(TokenType.ELSE);
     		codes.markElse(code);
@@ -180,7 +171,7 @@ public class Parser {
     // While
     private void while_command() {
     	consume(TokenType.WHILE);
-    	CodeTable.Entry code = codes.open("WHILE"); // [NOVO]
+    	CodeTable.Entry code = codes.open("WHILE");
     	consume(TokenType.LPAREN);
     	logic_expression();
     	consume(TokenType.RPAREN);
@@ -195,11 +186,10 @@ public class Parser {
     // For
     private void for_command() {
     	consume(TokenType.FOR);
-    	CodeTable.Entry code = codes.open("FOR"); // [NOVO]
+    	CodeTable.Entry code = codes.open("FOR");
     	consume(TokenType.LPAREN);
 
-    	symbols.enterScope(); // [NOVO] a variavel do for ("int i = 0") vale so dentro do for
-    	// [CORRIGIDO] antes chamava assignment() direto e nunca aceitava "i = 0"
+    	symbols.enterScope();
     	if (peek().getType() == TokenType.TYPE) {
     		declaration();
     	} else {
@@ -217,7 +207,6 @@ public class Parser {
     	code.end1 = block1[1];
     }
 
-    // [NOVO] "nome = expressao" (usado no inicio e no passo do for)
     private void assignment_statement() {
     	Token variable = compound_name();
     	use(variable);
@@ -239,8 +228,6 @@ public class Parser {
     }
 
     // Variables and functions connected with points
-    // [ALTERADO] agora devolve o token do nome quando ele e uma variavel simples (sem '.' e sem chamada);
-    // devolve null quando e chamada de funcao ou acesso com ponto (a.b, f(x)), que nao sao variaveis.
     private Token compound_name() {
     	Token first = consume(TokenType.NAME);
     	boolean simple = true;
@@ -275,7 +262,6 @@ public class Parser {
 
     }
 
-    // [NOVO] argumento de chamada: literal ('texto') ou expressao. Permite escreva('texto', a).
     private void argument() {
     	if (peek().getType() == TokenType.LITERAL) {
     		consume(TokenType.LITERAL);
@@ -331,7 +317,7 @@ public class Parser {
     private void factor() {
         switch (peek().getType()) {
         case TokenType.NAME:
-        	use(compound_name()); // [NOVO] registra o uso na Tabela de Simbolos
+        	use(compound_name());
         	break;
 		case TokenType.NUMBER:
 		    consume(TokenType.NUMBER);

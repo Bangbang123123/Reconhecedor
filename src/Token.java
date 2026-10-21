@@ -2,7 +2,7 @@
 public class Token {
 	private TokenType type;
     private String value;
-    private int line; // linha do codigo-fonte onde o token apareceu (usada nas tabelas)
+    private int line;
 
     Token(TokenType type, String value, int line) {
         this.type = type;

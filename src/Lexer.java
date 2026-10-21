@@ -5,14 +5,11 @@ import java.util.Set;
 
 
 public class Lexer {
-	// [CORRIGIDO] o automato de numeros usava a letra 'n' como simbolo de "digito", entao a variavel n virava NUMBER.
-	// Agora o simbolo e um caractere de controle que nao aparece em codigo-fonte.
 	private static final char DIGIT = '\0';
 
 	private String input;
     private int pos = 0;
 
-    // [NOVO] linha atual do codigo-fonte (comeca em 1) e linha onde o numero em leitura comecou
     private int line = 1;
     private int numberLine = 1;
 
@@ -45,12 +42,10 @@ public class Lexer {
 		Set.of('1','3')
 	);
 
-    // [NOVO] devolve o caractere 'offset' posicoes a frente sem estourar o texto
     private char lookahead(int offset) {
     	return (pos + offset < input.length()) ? input.charAt(pos + offset) : '\0';
     }
 
-    // [NOVO] fecha o numero que estava sendo lido (se houver) e gera o token NUMBER
     private void flushNumber(Queue<Token> tokens) {
     	if (numbers.inFinalState()) {
 			tokens.add(new Token(TokenType.NUMBER, numbers.returnTokenAndReset(), numberLine));
@@ -66,10 +61,10 @@ public class Lexer {
 
             // Skip blank space
             if (Character.isWhitespace(input.charAt(pos))) {
-            	// [NOVO] espaco/quebra de linha encerra o numero (evita "1 2" virar 12 e erro na linha)
+
             	flushNumber(tokens);
-            	if (input.charAt(pos) == '\n') line++; // [NOVO] contagem de linhas
-                pos++;
+            	if (input.charAt(pos) == '\n') line++;
+            	pos++;
                 continue;
             }
 
@@ -94,19 +89,19 @@ public class Lexer {
             // Number Detector
             char temp = input.charAt(pos);
             if (Character.isDigit(input.charAt(pos))) temp = DIGIT;
-            else if (temp == DIGIT) temp = '\1'; // nunca confundir um caractere comum com o simbolo de digito
+            else if (temp == DIGIT) temp = '\1';
             boolean numberWasEmpty = !numbers.inFinalState() && numbers.isEmpty();
             if (!numbers.nextInput(temp,input.charAt(pos))) {
             	if (numbers.inFinalState()) {
             		if (pos < input.length() && Character.isJavaIdentifierPart(input.charAt(pos))) {
-            			throw new RuntimeException("Lexer Error: Numbers cannot be immediately followed by letters. Line "+ line +", position: "+ pos);
+            			throw new RuntimeException("Lexer Error: Variable's name can't start with numbers. Line "+ line +", position: "+ pos);
                     }
         			tokens.add(new Token(TokenType.NUMBER,numbers.returnTokenAndReset(), numberLine));
         		} else {
         			numbers.returnTokenAndReset();
         		}
             } else {
-            	if (numberWasEmpty) numberLine = line; // [NOVO] guarda a linha do primeiro digito
+            	if (numberWasEmpty) numberLine = line;
             	pos++;
             	continue;
             }
@@ -133,7 +128,7 @@ public class Lexer {
             		case "for":
             		    tokens.add(new Token(TokenType.FOR, "for", line));
             		    continue;
-            		case "int","float","char","string","boolean","void": // [NOVO] "float" (o Portugol tem tipo real)
+            		case "int","float","char","string","boolean","void": 
             		    tokens.add(new Token(TokenType.TYPE, unidentified_token, line));
             			continue;
             		default:
@@ -178,8 +173,6 @@ public class Lexer {
 	            case ';':
 	            	tokens.add(new Token(TokenType.SEMICOLON, ";", line));
 	            	break;
-	            // [CORRIGIDO] os operadores de 1 ou 2 caracteres usavam ++pos e depois pos++ de novo,
-	            // o que "engolia" o caractere seguinte (ex.: "a<b" perdia o b). Agora usa lookahead().
 	            case '!':
 	            	if (lookahead(1) == '=') {
 	            		tokens.add(new Token(TokenType.DIFFERENT,"!=", line));
@@ -210,7 +203,7 @@ public class Lexer {
 	            		pos += 2;
 	            		continue;
 	            	}
-	            	tokens.add(new Token(TokenType.GREATER,">", line)); // [CORRIGIDO] o valor estava "<"
+	            	tokens.add(new Token(TokenType.GREATER,">", line)); 
 	            	break;
 	            case '|':
 	            	if (lookahead(1) == '|') {
